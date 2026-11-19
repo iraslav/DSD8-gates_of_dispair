@@ -21,7 +21,7 @@ PYTHON ?= python3
 all: lint test conformance
 
 lint:
-	./scripts/lint.sh
+	bash ./scripts/lint.sh
 
 test:
 	$(PYTHON) scripts/run_unit_tests.py

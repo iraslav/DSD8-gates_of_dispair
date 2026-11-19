@@ -14,12 +14,12 @@ module tb_nn_mac;
     reg [7:0] corner [0:4];
     reg signed [23:0] model0, model1;
 
-    nn_mac_pipe #(.POSTED(0)) dut0 (
+    nn_mac_pipe dut0 (
         .clk(clk), .rst_n(rst_n), .clr(clr), .start(start),
         .a(a), .w(w), .busy(busy0), .acc(acc0)
     );
 
-    nn_mac_pipe #(.POSTED(1)) dut1 (
+    nn_mac_pipe dut1 (
         .clk(clk), .rst_n(rst_n), .clr(clr), .start(start),
         .a(a), .w(w), .busy(busy1), .acc(acc1)
     );

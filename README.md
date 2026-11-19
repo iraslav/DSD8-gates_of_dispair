@@ -4,9 +4,7 @@ DSD-8 is an 8-bit Harvard-architecture processor written in synthesizable Verilo
 
 The accelerator implements signed multiply-accumulate (MAC), zero skipping, 24-bit accumulation, power-of-two requantization, and LUT activation. The included 4-6-3 network classifies quantized Iris samples and writes the predicted class (`0`, `1`, or `2`) to the LED output.
 
-A second, coexisting workload; a 4-class CNN driven through a sim-only streaming peripheral; runs on the same unmodified CPU/accelerator hardware; see [CNN multi-class extension](#cnn-multi-class-extension-cnn).
-
-[Project Website](https://hamadbijarani.github.io/projects/sem-7/dsd8-processor.html)
+A second, coexisting workload — a 4-class CNN driven through a sim-only streaming peripheral — runs on the same unmodified CPU/accelerator hardware; see [CNN multi-class extension](#cnn-multi-class-extension-cnn).
 
 ## Current verified results
 
@@ -317,7 +315,7 @@ To run on physical hardware, add the selected board's constraints and clocking, 
 - Run `make cnnbench` after CNN model, stream, or generator changes.
 - Mirror architectural changes in RTL, the golden simulators (`dsd8sim`, `dsd8sim_nn`, `dsd8sim_cnn`), the bit-exact references (`nn_ref`, `cnn_ref`), and the relevant testbenches.
 - Install the local pre-push checks with `./scripts/install_hooks.sh` if desired.
-- Do not assume hosted CI or board files are present; this checkout's guaranteed certification path is the local Makefile and scripts above.
+- Hosted CI is configured in `.github/workflows/`: `ci.yml` runs lint, unit tests, and conformance on pushes/PRs (conformance is informational on ordinary PRs and authoritative on pushes and tags), and `milestone.yml` runs `make all` on milestone tags. The same checks remain available locally through the Makefile and scripts above; no board files are included.
 
 See `STUDENT_GUIDE.md` for the teaching-oriented walkthrough and `PROJECT_DOCUMENTATION_AND_REPORT.md` for the complete engineering handbook, formal academic report, and submission appendices.
 
@@ -336,6 +334,6 @@ A second, coexisting workload runs a tiny 4-class CNN (8x8 image -> conv 3x3 x4 
 
 `make cnnbench` regenerates the programs and runs the full 256-run bench; results land in `build/cnn/bench.md`. Program sizes: a0 239, a2 233, b0 388, b1 510 of 512 IMEM words. The stream is 16,128 bytes: 64 samples x 252 bytes (64 image bytes, 4 x 10 convolution weights, and 4 x 37 folded FC weights each), selected with `+CNNSTREAM` and `+CNNSAMP`.
 
-Measured results (64 samples, `build/cnn/bench.md`): a2 mean 57,731 timed cycles and a0 mean 59,387, against 790,545 for shift-and-add software convolution and 1,202,307 for repeated-addition software convolution; 20.8x/13.7x and 20.2x/13.3x speedups. The accelerator variant retires about 24x fewer golden instructions than the repeated-addition baseline (13,696 vs 332,617); the multiply loops dominate the workload, and the MAC pipeline plus zero skipping removes them while the stream peripheral supplies the pointer/handshake traffic. Golden-sim mean instructions per image: a0 14.2k, a2 13.7k vs b1 208.9k, b0 332.6k.
+Measured results (64 samples, `build/cnn/bench.md`): a2 mean 57,731 timed cycles and a0 mean 59,387, against 790,545 for shift-and-add software convolution and 1,202,307 for repeated-addition software convolution — 20.8x/13.7x and 20.2x/13.3x speedups. The accelerator variant retires about 24x fewer golden instructions than the repeated-addition baseline (13,696 vs 332,617); the multiply loops dominate the workload, and the MAC pipeline plus zero skipping removes them while the stream peripheral supplies the pointer/handshake traffic. Golden-sim mean instructions per image: a0 14.2k, a2 13.7k vs b1 208.9k, b0 332.6k.
 
 All 64 samples x 4 variants pass on LEDs and are byte-exact on the intermediate conv-pool and logit DMEM (POOL at 128..163, LOG at 168..171) against `cnn/cnn_ref.py`, in both the golden simulator and RTL, under both `NN_POSTED` settings. The MLP flow (`make bench`) is untouched; `make all` stays green (13/13 unit, 2/2 conformance).

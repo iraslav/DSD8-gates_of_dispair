@@ -1,0 +1,80 @@
+name: CI
+
+# Every push and PR runs lint + unit tests (merge gates). Conformance is
+# run on every ref: informational on ordinary PRs, authoritative on pushes
+# and tags -- see CONTRIBUTING.md.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (Verilator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install EDA tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+      - name: Lint RTL
+        run: make lint
+
+  unit-tests:
+    name: Unit tests (13 testbenches)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install EDA tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Run unit testbenches
+        run: make test
+
+  conformance:
+    name: Conformance (golden vs RTL traces)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # On ordinary PRs conformance reports but does not gate the merge;
+    # on pushes and tags it is authoritative (CONTRIBUTING.md).
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install EDA tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Run conformance suite
+        run: |
+          set -o pipefail
+          make conformance | tee conformance.log
+      - name: Publish result to the job summary
+        if: always()
+        run: |
+          {
+            echo "### Conformance"
+            echo '```'
+            tail -n 12 conformance.log 2>/dev/null || echo "(no conformance output -- see the step log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

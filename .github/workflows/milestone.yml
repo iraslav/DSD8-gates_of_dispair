@@ -1,0 +1,45 @@
+name: Milestone certification
+
+# Milestone tags are what grading reads (CONTRIBUTING.md). All three
+# checks are authoritative here: a tagged commit must pass make all.
+
+on:
+  push:
+    tags: ["*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milestone-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    name: make all (lint + test + conformance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install EDA tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Run full certification
+        run: |
+          set -o pipefail
+          make all | tee certification.log
+      - name: Publish result to the job summary
+        if: always()
+        run: |
+          {
+            echo "### Milestone certification (make all)"
+            echo '```'
+            tail -n 20 certification.log 2>/dev/null || echo "(no certification output -- see the step log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

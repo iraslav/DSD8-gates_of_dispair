@@ -32,7 +32,7 @@ module nn_accel #(
     assign mac_start = unlocked && io_wr && io_ready && (io_port == 8'h51) && !zero;
     assign acc_clr   = unlocked && io_wr && io_ready && (io_port == 8'h52) && io_wdata[0];
 
-    nn_mac_pipe #(.POSTED(POSTED)) mac (
+    nn_mac_pipe mac (
         .clk(clk), .rst_n(rst_n), .clr(acc_clr),
         .start(mac_start), .a(a_reg), .w(io_wdata),
         .busy(busy), .acc(acc)

@@ -1,8 +1,5 @@
 // nn_mac_pipe.v -- 3-stage signed int8 multiply-accumulate with zero-skip
-// POSTED=0: blocking (ready held until accumulated); POSTED=1: pipelined.
-module nn_mac_pipe #(
-    parameter POSTED = 0
-) (
+module nn_mac_pipe (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        clr,
